@@ -2,7 +2,11 @@ package com.electrifiedded.hellyeahworkbench;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
-import net.minecraft.inventory.*;
+import net.minecraft.inventory.Container;
+import net.minecraft.inventory.InventoryCraftResult;
+import net.minecraft.inventory.InventoryCrafting;
+import net.minecraft.inventory.Slot;
+import net.minecraft.inventory.SlotCrafting;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.CraftingManager;
 import net.minecraft.item.crafting.IRecipe;
@@ -21,10 +25,12 @@ public class ContainerHellYeahWorkbench extends Container {
     private final BlockPos pos;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private CompletableFuture<Void> slotsAdditionFuture;
+    private final TileEntityHellYeahWorkbench tileEntity;
 
     public ContainerHellYeahWorkbench(InventoryPlayer playerInventory, World worldIn, BlockPos posIn) {
         this.world = worldIn;
         this.pos = posIn;
+        this.tileEntity = (TileEntityHellYeahWorkbench) worldIn.getTileEntity(posIn);
         this.craftMatrix = new InventoryCrafting(this, 18, 18);
         this.craftResult = new InventoryCraftResult();
 
@@ -66,7 +72,7 @@ public class ContainerHellYeahWorkbench extends Container {
 
     @Override
     public boolean canInteractWith(EntityPlayer playerIn) {
-        return true;
+        return tileEntity.isUsableByPlayer(playerIn);
     }
 
     @Override

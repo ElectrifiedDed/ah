@@ -37,10 +37,6 @@ public class BlockHellYeahWorkbench extends Block implements ITileEntityProvider
     public void breakBlock(World worldIn, BlockPos pos, IBlockState state) {
         TileEntityHellYeahWorkbench tileEntity = (TileEntityHellYeahWorkbench) worldIn.getTileEntity(pos);
         if (tileEntity != null) {
-            InventoryHellYeahWorkbench inventory = tileEntity.getInventory();
-            for (int i = 0; i < inventory.getSizeInventory(); i++) {
-                Block.spawnAsEntity(worldIn, pos, inventory.getStackInSlot(i));
-            }
         }
         super.breakBlock(worldIn, pos, state);
     }

@@ -1,90 +1,233 @@
 package com.electrifiedded.hellyeahworkbench;
 
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.inventory.IInventory;
+import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
-import net.minecraft.util.ITickable;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.items.CapabilityItemHandler;
-import net.minecraftforge.items.ItemStackHandler;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TextComponentString;
+import net.minecraft.util.text.TextComponentTranslation;
+import net.minecraftforge.common.util.Constants;
 
-public class TileEntityHellYeahWorkbench extends TileEntity implements ITickable {
-    public static final int SIZE = 9;
-    private InventoryHellYeahWorkbench inventory;
+public class TileEntityHellYeahWorkbench extends TileEntity implements IInventory {
+    private ItemStack result = ItemStack.EMPTY;
+    private ItemStack[] matrix = new ItemStack[324];
 
-
-    private ItemStackHandler itemStackHandler = new ItemStackHandler(SIZE) {
-        @Override
-        protected void onContentsChanged(int slot) {
-            TileEntityHellYeahWorkbench.this.markDirty();
-        }
-    };
     public TileEntityHellYeahWorkbench() {
-        this.inventory = new InventoryHellYeahWorkbench(324);
-    }
-
-    @Override
-    public void readFromNBT(NBTTagCompound compound) {
-        super.readFromNBT(compound);
-        if (compound.hasKey("items")) {
-            itemStackHandler.deserializeNBT((NBTTagCompound) compound.getTag("items"));
+        for (int i = 0; i < matrix.length; i++) {
+            matrix[i] = ItemStack.EMPTY;
         }
     }
 
     @Override
-    public NBTTagCompound writeToNBT(NBTTagCompound compound) {
-        super.writeToNBT(compound);
-        compound.setTag("items", itemStackHandler.serializeNBT());
-        return compound;
-    }
-
-    public InventoryHellYeahWorkbench getInventory() {
-        return inventory;
-    }
-
-
-
-    @Override
-    public void update() {
-        // Дополнительная логика обновления, если необходимо
-    }
-
-    @Override
-    public void onDataPacket(net.minecraft.network.NetworkManager net, net.minecraft.network.play.server.SPacketUpdateTileEntity pkt) {
-        readFromNBT(pkt.getNbtCompound());
-    }
-
-    @Override
-    public net.minecraft.network.play.server.SPacketUpdateTileEntity getUpdatePacket() {
-        NBTTagCompound nbtTagCompound = new NBTTagCompound();
-        writeToNBT(nbtTagCompound);
-        return new net.minecraft.network.play.server.SPacketUpdateTileEntity(this.pos, 1, nbtTagCompound);
-    }
-
-    @Override
-    public NBTTagCompound getUpdateTag() {
-        return writeToNBT(new NBTTagCompound());
-    }
-
-    public boolean canInteractWith(EntityPlayer playerIn) {
-        // If we are too far away from this tile entity you cannot use it
-        return !isInvalid() && playerIn.getDistanceSq(pos.add(0.5D, 0.5D, 0.5D)) <= 64D;
-    }
-
-    @Override
-    public boolean hasCapability(Capability<?> capability, EnumFacing facing) {
-        if (capability == CapabilityItemHandler.ITEM_HANDLER_CAPABILITY) {
-            return true;
+    public void readFromNBT(NBTTagCompound tag) {
+        super.readFromNBT(tag);
+        result = new ItemStack(tag.getCompoundTag("Result"));
+        NBTTagList itemList = tag.getTagList("CraftMatrix", Constants.NBT.TAG_COMPOUND);
+        for (int i = 0; i < itemList.tagCount(); i++) {
+            NBTTagCompound itemTag = itemList.getCompoundTagAt(i);
+            int slot = itemTag.getByte("Slot") & 255;
+            if (slot >= 0 && slot < matrix.length) {
+                matrix[slot] = new ItemStack(itemTag);
+            }
         }
-        return super.hasCapability(capability, facing);
     }
 
     @Override
-    public <T> T getCapability(Capability<T> capability, EnumFacing facing) {
-        if (capability == CapabilityItemHandler.ITEM_HANDLER_CAPABILITY) {
-            return CapabilityItemHandler.ITEM_HANDLER_CAPABILITY.cast(itemStackHandler);
+    public NBTTagCompound writeToNBT(NBTTagCompound tag) {
+        if (!result.isEmpty()) {
+            NBTTagCompound produce = new NBTTagCompound();
+            result.writeToNBT(produce);
+            tag.setTag("Result", produce);
+        } else {
+            tag.removeTag("Result");
         }
-        return super.getCapability(capability, facing);
+
+        NBTTagList itemList = new NBTTagList();
+        for (int i = 0; i < matrix.length; i++) {
+            if (!matrix[i].isEmpty()) {
+                NBTTagCompound itemTag = new NBTTagCompound();
+                itemTag.setByte("Slot", (byte) i);
+                matrix[i].writeToNBT(itemTag);
+                itemList.appendTag(itemTag);
+            }
+        }
+        tag.setTag("CraftMatrix", itemList);
+
+        return super.writeToNBT(tag);
+    }
+
+    @Override
+    public int getSizeInventory() {
+        return 325;
+    }
+
+    @Override
+    public boolean isEmpty() {
+        for (ItemStack stack : matrix) {
+            if (!stack.isEmpty()) {
+                return false;
+            }
+        }
+        return result.isEmpty();
+    }
+
+    @Override
+    public ItemStack getStackInSlot(int slot) {
+        if (slot == 0) {
+            return result;
+        } else if (slot <= matrix.length) {
+            return matrix[slot - 1];
+        } else {
+            return ItemStack.EMPTY;
+        }
+    }
+
+    @Override
+    public ItemStack decrStackSize(int slot, int decrement) {
+        if (slot == 0) {
+            if (!result.isEmpty()) {
+                for (int x = 1; x <= matrix.length; x++) {
+                    decrStackSize(x, 1);
+                }
+                if (result.getCount() <= decrement) {
+                    ItemStack craft = result;
+                    result = ItemStack.EMPTY;
+                    return craft;
+                }
+                ItemStack split = result.splitStack(decrement);
+                if (result.getCount() <= 0) {
+                    result = ItemStack.EMPTY;
+                }
+                return split;
+            } else {
+                return ItemStack.EMPTY;
+            }
+        } else if (slot <= matrix.length) {
+            if (!matrix[slot - 1].isEmpty()) {
+                if (matrix[slot - 1].getCount() <= decrement) {
+                    ItemStack ingredient = matrix[slot - 1];
+                    matrix[slot - 1] = ItemStack.EMPTY;
+                    return ingredient;
+                }
+                ItemStack split = matrix[slot - 1].splitStack(decrement);
+                if (matrix[slot - 1].getCount() <= 0) {
+                    matrix[slot - 1] = ItemStack.EMPTY;
+                }
+                return split;
+            }
+        }
+        return ItemStack.EMPTY;
+    }
+
+    @Override
+    public ItemStack removeStackFromSlot(int slot) {
+        if (slot == 0) {
+            if (!result.isEmpty()) {
+                for (int x = 1; x <= matrix.length; x++) {
+                    decrStackSize(x, 1);
+                }
+                ItemStack craft = result;
+                result = ItemStack.EMPTY;
+                return craft;
+            } else {
+                return ItemStack.EMPTY;
+            }
+        } else if (slot <= matrix.length) {
+            if (!matrix[slot - 1].isEmpty()) {
+                ItemStack ingredient = matrix[slot - 1];
+                matrix[slot - 1] = ItemStack.EMPTY;
+                return ingredient;
+            }
+        }
+        return ItemStack.EMPTY;
+    }
+
+    @Override
+    public void openInventory(EntityPlayer player) {
+    }
+
+    @Override
+    public void closeInventory(EntityPlayer player) {
+    }
+
+    @Override
+    public boolean isUsableByPlayer(EntityPlayer player) {
+        return true;
+    }
+
+    @Override
+    public boolean isItemValidForSlot(int slot, ItemStack stack) {
+        return true;
+    }
+
+    @Override
+    public int getInventoryStackLimit() {
+        return 64;
+    }
+
+    @Override
+    public void setInventorySlotContents(int slot, ItemStack stack) {
+        if (slot == 0) {
+            result = stack;
+        } else if (slot <= matrix.length) {
+            matrix[slot - 1] = stack;
+        }
+    }
+
+    @Override
+    public String getName() {
+        return "container.dire";
+    }
+
+    @Override
+    public boolean hasCustomName() {
+        return false;
+    }
+
+    @Override
+    public ITextComponent getDisplayName() {
+        if (hasCustomName()) {
+            return new TextComponentString(getName());
+        }
+        return new TextComponentTranslation(getName());
+    }
+
+
+    public int[] getSlotsForFace(EnumFacing face) {
+        return new int[0];
+    }
+
+
+    public boolean canInsertItem(int slot, ItemStack item, EnumFacing face) {
+        return true;
+    }
+
+    public boolean canExtractItem(int slot, ItemStack item, EnumFacing face) {
+        return true;
+    }
+    @Override
+    public int getFieldCount() {
+        return 0;
+    }
+
+    @Override
+    public void setField(int id, int value) {
+    }
+
+    @Override
+    public int getField(int id) {
+        return 0;
+    }
+
+    @Override
+    public void clear() {
+        result = ItemStack.EMPTY;
+        for (int x = 0; x < matrix.length; x++) {
+            matrix[x] = ItemStack.EMPTY;
+        }
     }
 }
