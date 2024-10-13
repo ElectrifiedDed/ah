@@ -41,7 +41,7 @@ public class BlockHellYeahWorkbench extends BlockContainer implements IModelRegi
         if (world.isRemote) {
             return true;
         } else {
-            player.openGui(Core.instance, 1, world, pos.getX(), pos.getY(), pos.getZ());
+            player.openGui(Core.instance, 0, world, pos.getX(), pos.getY(), pos.getZ());
             return true;
         }
     }
