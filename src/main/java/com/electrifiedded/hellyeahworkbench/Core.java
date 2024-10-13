@@ -27,41 +27,35 @@ public class Core {
     @Mod.Instance(Tags.MODID)
     public static Core instance;
 
-    @GameRegistry.ObjectHolder("hellyeahworkbench:BlockHellYeahWorkbench")
-    public static BlockHellYeahWorkbench customWorkbench;
+
+    public static Block hellYeahWorkbench = new BlockHellYeahWorkbench();
+
+    @Mod.EventHandler
+    public void preInit(FMLPreInitializationEvent event) {
+        hellYeahWorkbench = new BlockHellYeahWorkbench();
+    }
+
+    @Mod.EventHandler
+    public void init(FMLInitializationEvent event) {
+        // Здесь можно выполнить инициализацию, необходимую после загрузки мода
+    }
 
     @Mod.EventBusSubscriber
     public static class RegistrationHandler {
-
         @SubscribeEvent
         public static void registerBlocks(RegistryEvent.Register<Block> event) {
-            event.getRegistry().register(new BlockHellYeahWorkbench().setRegistryName(new ResourceLocation(Tags.MODID, "BlockHellYeahWorkbench")));
-            GameRegistry.registerTileEntity(TileEntityHellYeahWorkbench.class, "TileEntityHellYeahWorkbench");
+            event.getRegistry().register(hellYeahWorkbench);
         }
 
         @SubscribeEvent
         public static void registerItems(RegistryEvent.Register<Item> event) {
-            event.getRegistry().register(new ItemBlock(customWorkbench).setRegistryName(customWorkbench.getRegistryName()));
+            event.getRegistry().register(new ItemBlock(hellYeahWorkbench).setRegistryName(hellYeahWorkbench.getRegistryName()));
         }
 
         @SubscribeEvent
         @SideOnly(Side.CLIENT)
         public static void registerModels(ModelRegistryEvent event) {
-            ModelLoader.setCustomModelResourceLocation(Item.getItemFromBlock(customWorkbench), 0, new ModelResourceLocation(customWorkbench.getRegistryName(), "inventory"));
+            ModelLoader.setCustomModelResourceLocation(Item.getItemFromBlock(hellYeahWorkbench), 0, new ModelResourceLocation(hellYeahWorkbench.getRegistryName(), "inventory"));
         }
     }
-
-    @EventHandler
-    public void preInit(FMLPreInitializationEvent event) {
-        // Регистрация блока и предмета уже выполняется в RegistrationHandler
-    }
-    @SubscribeEvent
-    public static void registerRecipes(RegistryEvent.Register<IRecipe> event) {
-        event.getRegistry().register(new RecipeHellYeahCrafting().setRegistryName("hell_yeah_crafting"));
-    }
-    @EventHandler
-    public void init(FMLInitializationEvent event) {
-        NetworkRegistry.INSTANCE.registerGuiHandler(this, new HellYeahGuiHandler());
-    }
-
 }

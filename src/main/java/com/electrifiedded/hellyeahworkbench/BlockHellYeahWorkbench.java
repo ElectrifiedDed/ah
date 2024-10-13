@@ -1,43 +1,47 @@
 package com.electrifiedded.hellyeahworkbench;
+
 import net.minecraft.block.Block;
-import net.minecraft.block.ITileEntityProvider;
+import net.minecraft.block.BlockContainer;
+import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.EnumBlockRenderType;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
-public class BlockHellYeahWorkbench extends Block implements ITileEntityProvider {
+public class BlockHellYeahWorkbench extends BlockContainer {
 
     public BlockHellYeahWorkbench() {
-        super(Material.WOOD);
-
+        super(Material.IRON);
+        setHardness(50F);
+        setResistance(2000F);
+        setTranslationKey("hell_yeah_workbench");
+        setHarvestLevel("pickaxe", 3);
+        setSoundType(SoundType.GLASS);
+        setRegistryName("hell_yeah_workbench");
     }
 
     @Override
-    public TileEntity createNewTileEntity(World worldIn, int meta) {
-        return new TileEntityHellYeahWorkbench();
-    }
-
-    @Override
-    public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
-        if (!worldIn.isRemote) {
-            TileEntityHellYeahWorkbench tileEntity = (TileEntityHellYeahWorkbench) worldIn.getTileEntity(pos);
-            if (tileEntity != null) {
-                playerIn.openGui(Core.instance, HellYeahGuiHandler.CUSTOM_WORKBENCH_GUI_ID, worldIn, pos.getX(), pos.getY(), pos.getZ());
-            }
+    public boolean onBlockActivated(World world, BlockPos pos, IBlockState state, EntityPlayer player, EnumHand hand, EnumFacing side, float hitX, float hitY, float hitZ) {
+        if (world.isRemote) {
+            return true;
+        } else {
+            player.openGui(Core.instance, 4, world, pos.getX(), pos.getY(), pos.getZ());
+            return true;
         }
-        return true;
     }
 
     @Override
-    public void breakBlock(World worldIn, BlockPos pos, IBlockState state) {
-        TileEntityHellYeahWorkbench tileEntity = (TileEntityHellYeahWorkbench) worldIn.getTileEntity(pos);
-        if (tileEntity != null) {
-        }
-        super.breakBlock(worldIn, pos, state);
+    public TileEntity createNewTileEntity(World world, int meta) {
+        return new TileHellYeahWorkbench();
+    }
+
+    @Override
+    public EnumBlockRenderType getRenderType(IBlockState state) {
+        return EnumBlockRenderType.MODEL;
     }
 }

@@ -1,37 +1,37 @@
 package com.electrifiedded.hellyeahworkbench;
 
+
+import codechicken.lib.util.ArrayUtils;
+import codechicken.lib.util.BlockUtils;
+import morph.avaritia.tile.TileBase;
+import net.minecraft.inventory.IInventory;
+import net.minecraft.inventory.ISidedInventory;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
+import net.minecraft.inventory.ISidedInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextComponentTranslation;
-import net.minecraftforge.common.util.Constants;
 
-public class TileEntityHellYeahWorkbench extends TileEntity implements IInventory {
+public class TileHellYeahWorkbench extends HellYeahTileBase implements IInventory, ISidedInventory {
     private ItemStack result = ItemStack.EMPTY;
-    private ItemStack[] matrix = new ItemStack[324];
+    private ItemStack[] matrix = new ItemStack[81];
 
-    public TileEntityHellYeahWorkbench() {
-        for (int i = 0; i < matrix.length; i++) {
-            matrix[i] = ItemStack.EMPTY;
-        }
+    public TileHellYeahWorkbench() {
+        ArrayUtils.fillArray(matrix, ItemStack.EMPTY);
     }
 
     @Override
     public void readFromNBT(NBTTagCompound tag) {
         super.readFromNBT(tag);
         result = new ItemStack(tag.getCompoundTag("Result"));
-        NBTTagList itemList = tag.getTagList("CraftMatrix", Constants.NBT.TAG_COMPOUND);
-        for (int i = 0; i < itemList.tagCount(); i++) {
-            NBTTagCompound itemTag = itemList.getCompoundTagAt(i);
-            int slot = itemTag.getByte("Slot") & 255;
-            if (slot >= 0 && slot < matrix.length) {
-                matrix[slot] = new ItemStack(itemTag);
+        for (int x = 0; x < matrix.length; x++) {
+            if (tag.hasKey("Craft" + x)) {
+                matrix[x] = new ItemStack(tag.getCompoundTag("Craft" + x));
             }
         }
     }
@@ -46,33 +46,26 @@ public class TileEntityHellYeahWorkbench extends TileEntity implements IInventor
             tag.removeTag("Result");
         }
 
-        NBTTagList itemList = new NBTTagList();
-        for (int i = 0; i < matrix.length; i++) {
-            if (!matrix[i].isEmpty()) {
-                NBTTagCompound itemTag = new NBTTagCompound();
-                itemTag.setByte("Slot", (byte) i);
-                matrix[i].writeToNBT(itemTag);
-                itemList.appendTag(itemTag);
+        for (int x = 0; x < matrix.length; x++) {
+            if (!matrix[x].isEmpty()) {
+                NBTTagCompound craft = new NBTTagCompound();
+                matrix[x].writeToNBT(craft);
+                tag.setTag("Craft" + x, craft);
+            } else {
+                tag.removeTag("Craft" + x);
             }
         }
-        tag.setTag("CraftMatrix", itemList);
-
         return super.writeToNBT(tag);
     }
 
     @Override
     public int getSizeInventory() {
-        return 325;
+        return 82;
     }
 
     @Override
     public boolean isEmpty() {
-        for (ItemStack stack : matrix) {
-            if (!stack.isEmpty()) {
-                return false;
-            }
-        }
-        return result.isEmpty();
+        return ArrayUtils.count(matrix, stack -> !stack.isEmpty()) <= 0 && result.isEmpty();
     }
 
     @Override
@@ -88,6 +81,7 @@ public class TileEntityHellYeahWorkbench extends TileEntity implements IInventor
 
     @Override
     public ItemStack decrStackSize(int slot, int decrement) {
+
         if (slot == 0) {
             if (!result.isEmpty()) {
                 for (int x = 1; x <= matrix.length; x++) {
@@ -107,7 +101,7 @@ public class TileEntityHellYeahWorkbench extends TileEntity implements IInventor
                 return ItemStack.EMPTY;
             }
         } else if (slot <= matrix.length) {
-            if (!matrix[slot - 1].isEmpty()) {
+            if (matrix[slot - 1] != ItemStack.EMPTY) {
                 if (matrix[slot - 1].getCount() <= decrement) {
                     ItemStack ingredient = matrix[slot - 1];
                     matrix[slot - 1] = ItemStack.EMPTY;
@@ -130,9 +124,11 @@ public class TileEntityHellYeahWorkbench extends TileEntity implements IInventor
                 for (int x = 1; x <= matrix.length; x++) {
                     decrStackSize(x, 1);
                 }
+
                 ItemStack craft = result;
                 result = ItemStack.EMPTY;
                 return craft;
+
             } else {
                 return ItemStack.EMPTY;
             }
@@ -156,12 +152,13 @@ public class TileEntityHellYeahWorkbench extends TileEntity implements IInventor
 
     @Override
     public boolean isUsableByPlayer(EntityPlayer player) {
-        return true;
+        return world.getTileEntity(pos) == this && BlockUtils.isEntityInRange(pos, player, 64);
     }
 
     @Override
     public boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return true;
+
+        return false;
     }
 
     @Override
@@ -196,19 +193,21 @@ public class TileEntityHellYeahWorkbench extends TileEntity implements IInventor
         return new TextComponentTranslation(getName());
     }
 
-
+    @Override
     public int[] getSlotsForFace(EnumFacing face) {
-        return new int[0];
+        return new int[] {};
     }
 
-
+    @Override
     public boolean canInsertItem(int slot, ItemStack item, EnumFacing face) {
-        return true;
+        return false;
     }
 
+    @Override
     public boolean canExtractItem(int slot, ItemStack item, EnumFacing face) {
-        return true;
+        return false;
     }
+
     @Override
     public int getFieldCount() {
         return 0;

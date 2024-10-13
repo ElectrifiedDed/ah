@@ -1,88 +1,98 @@
 package com.electrifiedded.hellyeahworkbench;
 
+import morph.avaritia.recipe.AvaritiaRecipeManager;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
-import net.minecraft.inventory.Container;
-import net.minecraft.inventory.InventoryCraftResult;
-import net.minecraft.inventory.InventoryCrafting;
-import net.minecraft.inventory.Slot;
-import net.minecraft.inventory.SlotCrafting;
+import net.minecraft.inventory.*;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.crafting.CraftingManager;
-import net.minecraft.item.crafting.IRecipe;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import static com.electrifiedded.hellyeahworkbench.CommonProxy.blockHellYeahWorkbench;
 
 public class ContainerHellYeahWorkbench extends Container {
 
-    private final InventoryCrafting craftMatrix;
-    private final InventoryCraftResult craftResult;
-    private final World world;
-    private final BlockPos pos;
-    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
-    private CompletableFuture<Void> slotsAdditionFuture;
-    private final TileEntityHellYeahWorkbench tileEntity;
+    public InventoryCrafting craftMatrix;
+    public IInventory craftResult;
+    protected World worldObj;
+    protected BlockPos pos;
 
-    public ContainerHellYeahWorkbench(InventoryPlayer playerInventory, World worldIn, BlockPos posIn) {
-        this.world = worldIn;
-        this.pos = posIn;
-        this.tileEntity = (TileEntityHellYeahWorkbench) worldIn.getTileEntity(posIn);
-        this.craftMatrix = new InventoryCrafting(this, 18, 18);
-        this.craftResult = new InventoryCraftResult();
+    public ContainerHellYeahWorkbench(InventoryPlayer player, World world, BlockPos pos, TileHellYeahWorkbench table) {
+        worldObj = world;
+        this.pos = pos;
+        craftMatrix = new InventoryCrafting(this, 18, 18);
+        craftResult = new InventoryCraftResult();
+        addSlotToContainer(new Slot(craftResult, 0, 324, 80));
 
-        // Добавление слота для результата
-        this.addSlotToContainer(new SlotCrafting(playerInventory.player, this.craftMatrix, this.craftResult, 0, 324, 162));
-
-        // Добавление слотов для инвентаря игрока
-        for (int k = 0; k < 3; ++k) {
-            for (int i1 = 0; i1 < 9; ++i1) {
-                this.addSlotToContainer(new Slot(playerInventory, i1 + k * 9 + 9, 8 + i1 * 18, 36 + k * 18 + 18 * 18));
+        for (int wy = 0; wy < 18; ++wy) {
+            for (int ex = 0; ex < 18; ++ex) {
+                addSlotToContainer(new Slot(craftMatrix, ex + wy * 18, 12 + ex * 18, 8 + wy * 18));
             }
         }
 
-        for (int l = 0; l < 9; ++l) {
-            this.addSlotToContainer(new Slot(playerInventory, l, 8 + l * 18, 94 + 18 * 18));
+        for (int wy = 0; wy < 3; ++wy) {
+            for (int ex = 0; ex < 9; ++ex) {
+                addSlotToContainer(new Slot(player, ex + wy * 9 + 9, 39 + ex * 18, 338 + wy * 18));
+            }
         }
 
-        // Запуск добавления слотов для крафта в фоновом потоке
-        slotsAdditionFuture = CompletableFuture.runAsync(this::addCraftingSlotsPartially, executorService)
-                .thenRun(this::updateCraftingResult);
-    }
-
-    private void addCraftingSlotsPartially() {
-        for (int i = 0; i < 324; ++i) {
-            int row = i / 18;
-            int col = i % 18;
-            this.addSlotToContainer(new Slot(this.craftMatrix, col + row * 18, 8 + col * 18, 18 + row * 18));
+        for (int ex = 0; ex < 9; ++ex) {
+            addSlotToContainer(new Slot(player, ex, 39 + ex * 18, 496));
         }
-    }
 
-    private void updateCraftingResult() {
-        IRecipe recipe = CraftingManager.findMatchingRecipe(this.craftMatrix, this.world);
-        if (recipe != null) {
-            this.craftResult.setInventorySlotContents(0, recipe.getCraftingResult(this.craftMatrix));
-        } else {
-            this.craftResult.setInventorySlotContents(0, ItemStack.EMPTY);
-        }
+        onCraftMatrixChanged(craftMatrix);
     }
 
     @Override
-    public boolean canInteractWith(EntityPlayer playerIn) {
-        return tileEntity.isUsableByPlayer(playerIn);
+    public void onCraftMatrixChanged(IInventory matrix) {
+        craftResult.setInventorySlotContents(0, AvaritiaRecipeManager.getExtremeCraftingResult(craftMatrix, worldObj));
     }
 
     @Override
-    public ItemStack transferStackInSlot(EntityPlayer playerIn, int index) {
-        return ItemStack.EMPTY;
+    public boolean canInteractWith(EntityPlayer player) {
+        return worldObj.getBlockState(pos) == CommonProxy.blockHellYeahWorkbench.getDefaultState() && player.getDistanceSq(pos) <= 64.0D;
     }
 
     @Override
-    public void onContainerClosed(EntityPlayer playerIn) {
-        super.onContainerClosed(playerIn);
-        executorService.shutdown();
+    public ItemStack transferStackInSlot(EntityPlayer player, int slotNumber) {
+        ItemStack itemstack = ItemStack.EMPTY;
+        Slot slot = inventorySlots.get(slotNumber);
+
+        if (slot != null && slot.getHasStack()) {
+            ItemStack itemstack1 = slot.getStack();
+            itemstack = itemstack1.copy();
+
+            if (slotNumber == 0) {
+                if (!mergeItemStack(itemstack1, 325, 562, true)) {
+                    return ItemStack.EMPTY;
+                }
+
+                slot.onSlotChange(itemstack1, itemstack);
+            } else if (slotNumber >= 325 && slotNumber < 562) {
+                if (!mergeItemStack(itemstack1, 562, 651, false)) {
+                    return ItemStack.EMPTY;
+                }
+            } else if (slotNumber >= 562 && slotNumber < 651) {
+                if (!mergeItemStack(itemstack1, 325, 562, false)) {
+                    return ItemStack.EMPTY;
+                }
+            } else if (!mergeItemStack(itemstack1, 325, 651, false)) {
+                return ItemStack.EMPTY;
+            }
+
+            if (itemstack1.isEmpty()) {
+                slot.putStack(ItemStack.EMPTY);
+            } else {
+                slot.onSlotChanged();
+            }
+
+            if (itemstack1.getCount() == itemstack.getCount()) {
+                return ItemStack.EMPTY;
+            }
+
+            slot.onTake(player, itemstack1);
+        }
+
+        return itemstack;
     }
 }

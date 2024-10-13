@@ -38,5 +38,6 @@
  * For more details, see https://docs.gradle.org/8.4/userguide/java_library_plugin.html#sec:java_library_configurations_graph
  */
 dependencies {
-
+    implementation rfg.deobf("curse.maven:avaritia-1-1x-kedition-913129:4777278")
+    implementation rfg.deobf("curse.maven:codechicken-lib-1-8-242818:2779848")
 }
