@@ -1,5 +1,6 @@
 package com.electrifiedded.hellyeahworkbench;
 
+import morph.avaritia.Avaritia;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.IRecipe;
@@ -21,10 +22,12 @@ import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
-@Mod(modid = Tags.MODID, version = Tags.VERSION, name = Tags.MODNAME, acceptedMinecraftVersions = "[1.12.2]")
+import static com.electrifiedded.hellyeahworkbench.Tags.MODID;
+
+@Mod(modid = MODID, version = Tags.VERSION, name = Tags.MODNAME, acceptedMinecraftVersions = "[1.12.2]")
 public class Core {
 
-    @Mod.Instance(Tags.MODID)
+    @Mod.Instance(MODID)
     public static Core instance;
 
 
@@ -33,6 +36,8 @@ public class Core {
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
         hellYeahWorkbench = new BlockHellYeahWorkbench();
+        GameRegistry.registerTileEntity(TileHellYeahWorkbench.class, new ResourceLocation(MODID, "hell_yeah_workbench"));
+        NetworkRegistry.INSTANCE.registerGuiHandler(Avaritia.instance, new GUIHandler());
     }
 
     @Mod.EventHandler

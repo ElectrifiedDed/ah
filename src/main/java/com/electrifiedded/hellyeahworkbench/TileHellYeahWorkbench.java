@@ -6,12 +6,13 @@ import codechicken.lib.util.BlockUtils;
 import morph.avaritia.tile.TileBase;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.ISidedInventory;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.ISidedInventory;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextComponentString;
@@ -19,7 +20,7 @@ import net.minecraft.util.text.TextComponentTranslation;
 
 public class TileHellYeahWorkbench extends HellYeahTileBase implements IInventory, ISidedInventory {
     private ItemStack result = ItemStack.EMPTY;
-    private ItemStack[] matrix = new ItemStack[81];
+    private ItemStack[] matrix = new ItemStack[324];
 
     public TileHellYeahWorkbench() {
         ArrayUtils.fillArray(matrix, ItemStack.EMPTY);
@@ -229,4 +230,5 @@ public class TileHellYeahWorkbench extends HellYeahTileBase implements IInventor
             matrix[x] = ItemStack.EMPTY;
         }
     }
+
 }
